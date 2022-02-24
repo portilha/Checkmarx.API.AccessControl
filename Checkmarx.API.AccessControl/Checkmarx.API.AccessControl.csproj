@@ -18,11 +18,7 @@
 	  <RepositoryType>git</RepositoryType>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="Assets\CxIcon.png" />
-  </ItemGroup>
-
+	
   <ItemGroup>
     <EmbeddedResource Include="Assets\CxIcon.png">
       <Pack>True</Pack>
