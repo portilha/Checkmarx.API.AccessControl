@@ -6,13 +6,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.DirectoryServices.AccountManagement;
+using System.DirectoryServices;
 
 namespace Checkmarx.API.AccessControl.Tests
 {
     [TestClass]
     public class ACTests
     {
-       private static AccessControlClient _accessControlClient;
+        private static AccessControlClient _accessControlClient;
 
         public static IConfigurationRoot Configuration { get; private set; }
 
@@ -57,6 +59,41 @@ namespace Checkmarx.API.AccessControl.Tests
             }
         }
 
+        [TestMethod]
+        public void GetUserFromADTest()
+        {
+            using (var context = new PrincipalContext(ContextType.Domain, "DM"))
+            {
+                using (var searcher = new PrincipalSearcher(new UserPrincipal(context)))
+                {
+                    //DirectorySearcher search = new DirectorySearcher(context);
+                    //search.Filter = "(cn=" + "Pedro Portilha" + ")";
+
+                    //foreach (var result in searcher.FindAll().Take(10))
+                    //{
+                    var result = searcher.FindOne();
+
+                    DirectoryEntry de = result.GetUnderlyingObject() as DirectoryEntry;
+
+                    //foreach (var item in de.Properties.PropertyNames)
+                    //{
+                    //    Trace.WriteLine(item.ToString() + " " + de.Properties[item.ToString()].Value);
+                    //}
+
+                    Trace.WriteLine("First Name: " + de.Properties["givenName"].Value);
+                    Trace.WriteLine("Last Name : " + de.Properties["sn"].Value);
+                    Trace.WriteLine("Title : " + de.Properties["title"].Value);
+                    Trace.WriteLine("Country : " + de.Properties["homeCountry"].Value);
+                    Trace.WriteLine("Mail : " + de.Properties["mail"].Value);
+                    Trace.WriteLine("Mobile : " + de.Properties["mobile"].Value);
+                    Trace.WriteLine("PreferredLanaguage : " + de.Properties["preferredLanguage"].Value);
+                    //Trace.WriteLine("SAM account name   : " + de.Properties["samAccountName"].Value);
+                    //Trace.WriteLine("User principal name: " + de.Properties["userPrincipalName"].Value);
+                    Trace.WriteLine("");
+                    //}
+                }
+            }
+        }
 
         [TestMethod]
         public void UpdateExpirationDateTest()
@@ -106,7 +143,6 @@ namespace Checkmarx.API.AccessControl.Tests
 
             Assert.IsNotNull(result.GeneratedPassword);
         }
-
 
         [TestMethod]
         public void CreateUserTest()
@@ -171,8 +207,6 @@ namespace Checkmarx.API.AccessControl.Tests
                 Trace.WriteLine($"{item.Id} = {item.Name} = {item.ProviderType}");
             }
         }
-
-
 
         [TestMethod]
         public void ListRolesTest()
