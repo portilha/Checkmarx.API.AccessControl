@@ -15,6 +15,7 @@
 namespace Checkmarx.API
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System = global::System;
 
@@ -96,6 +97,94 @@ namespace Checkmarx.API
 
             return 0;
         }
+
+        private IEnumerable<UserViewModel> _users = null;
+        public IEnumerable<UserViewModel> Users
+        {
+            get
+            {
+                if (_users == null)
+                    _users = GetAllUsersDetailsAsync().Result;
+
+                return _users;
+            }
+        }
+
+        private void OnUserDelete()
+        {
+            _users = null;
+        }
+
+        private IEnumerable<TeamViewModel> _teams = null;
+        public IEnumerable<TeamViewModel> Teams
+        {
+            get
+            {
+                if (_teams == null)
+                    _teams = TeamsAllAsync().Result;
+
+                return _teams;
+            }
+        }
+
+        private void OnTeamDelete()
+        {
+            _teams = null;
+        }
+
+        public TeamViewModel GetTeamByFullName(string teamFullName)
+        {
+            return Teams.Where(x => x.FullName == teamFullName).FirstOrDefault();
+        }
+
+        public IEnumerable<UserViewModel> GetUsersByTeamId(long teamId)
+        {
+            return Users.Where(x => x.TeamIds.Any(x => x == teamId));
+        }
+
+        public UserViewModel GetUserByFullName(string fullName)
+        {
+            return Users.Where(x => string.Format("{0} {1}", x.FirstName, x.LastName) == fullName).FirstOrDefault();
+        }
+
+        public void DisableUserByEmail(string email)
+        {
+            var user = Users.FirstOrDefault(x => x.Email == email);
+
+            if (user == null)
+                throw new ApplicationException("User not found");
+
+            UpdateUserModel updateUserModel = getUpdateUserModel(user);
+            
+            updateUserModel.Active = false;
+
+            UpdateUserDetails(user.Id, updateUserModel);
+        }
+
+        private UpdateUserModel getUpdateUserModel(UserViewModel user)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            return new UpdateUserModel
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                AllowedIpList = user.AllowedIpList,
+                CellPhoneNumber = user.CellPhoneNumber,
+                Country = user.Country,
+                Email = user.Email,
+                JobTitle = user.JobTitle,
+                LocaleId = user.LocaleId,
+                Other = user.Other,
+                RoleIds = user.RoleIds,
+                TeamIds = user.TeamIds,
+                PhoneNumber = user.PhoneNumber,
+                Active = user.Active,
+                ExpirationDate = user.ExpirationDate
+            };
+        }
+
 
         /// <summary>Gets a list of users to which you can assign vulnerabilities</summary>
         /// <returns>Gets a list of users to which you can assign vulnerabilities</returns>
@@ -8426,6 +8515,7 @@ namespace Checkmarx.API
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 204)
                         {
+                            OnTeamDelete();
                             return;
                         }
                         else
@@ -8479,6 +8569,8 @@ namespace Checkmarx.API
                     client_.Dispose();
             }
         }
+
+        
 
         /// <summary>Generates a new token signing certificate</summary>
         /// <returns>Returns url to jwks</returns>
@@ -9138,6 +9230,8 @@ namespace Checkmarx.API
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 204)
                         {
+                            OnUserDelete();
+
                             return;
                         }
                         else
@@ -9191,6 +9285,7 @@ namespace Checkmarx.API
                     client_.Dispose();
             }
         }
+
 
         /// <summary>Migrate existing user</summary>
         /// <param name="body">User migration details</param>
